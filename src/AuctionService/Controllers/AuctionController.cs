@@ -76,10 +76,27 @@ public class AuctionController : ControllerBase
         auction.Item.Year = updateAuctionDto.Year ?? auction.Item.Year;
 
         var result = await _context.SaveChangesAsync() > 0;
-        
+
         if (result)
             return Ok();
         return BadRequest("Problem saving changes");
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteAuction(Guid id)
+    {
+        var auction = await _context.Auctions.FindAsync(id);
+        if (auction == null)
+            return NotFound();
+
+
+        _context.Auctions.Remove(auction);
+
+        var result = await _context.SaveChangesAsync() > 0;
+
+        if (!result)
+            return BadRequest("Could not update DB");
+        return Ok();
     }
 
 }
