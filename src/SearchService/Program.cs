@@ -1,7 +1,7 @@
-using MongoDB.Driver;
-using MongoDB.Entities;
+using System.Net;
+using Polly;
+using Polly.Extensions.Http;
 using SearchService.Data;
-using SearchService.Models;
 using SearchService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-builder.Services.AddHttpClient<AuctionSvcHttpClient>();
+builder.Services.AddHttpClient<AuctionSvcHttpClient>().AddPolicyHandler(GetPolicy());
 
 var app = builder.Build();
 
@@ -20,15 +20,27 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-
-try
-{
-    await DbInitializer.InitDb(app);
-}
-catch (Exception e)
-{
-    
-    System.Console.WriteLine(e);;
-}
+app.Lifetime.ApplicationStarted.Register(async () =>{
+    try
+    {
+        await DbInitializer.InitDb(app);
+    }
+    catch (Exception e)
+    {
+        
+        System.Console.WriteLine(e);;
+    }
+});
 
 app.Run();
+ 
+// If the AuctionService is down, we are going to handle the exception
+// and keep on trying evry 3 seconds until the AuctionService is up and running.
+// This ensures the policy will retry only on temporary failures and not on every HTTP error.
+// This ensures that if the HTTP response status is 404 Not Found, Polly will still retry.
+
+static IAsyncPolicy<HttpResponseMessage> GetPolicy()
+    => HttpPolicyExtensions
+        .HandleTransientHttpError()// Handles transient HTTP errors such as 5xxx (Server errors), 408 (Request Timeout), Any network failures such as timeouts, connection failures or DNS issues.
+        .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)// This method extends the previous one by also handling 404 Not Found responses. .OrResult(...) function specify a custom condition where Polly should also retry
+        .WaitAndRetryForeverAsync(_ => TimeSpan.FromSeconds(3));
