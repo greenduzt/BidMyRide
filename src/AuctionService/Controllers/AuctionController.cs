@@ -44,17 +44,19 @@ public class AuctionController(AuctionDbContext context, IMapper mapper, IPublis
         return mapper.Map<AuctionDto>(auction);
     }
     [HttpPost] 
-    public async Task<ActionResult<AuctionDto>> CreateAuction(CreateAuctionDto auctionDto)
+    public async Task<ActionResult<AuctionDto>> CreateAuction(CreateAuctionDto auctionDto) 
     {
         var auction = mapper.Map<Auction>(auctionDto);
         auction.Seller = "test";
-        context.Auctions.Add(auction);
 
-        var result = await context.SaveChangesAsync() > 0;
+        //Following 3 lines will work as a transaction, Either all work or none of these work
+        context.Auctions.Add(auction);
 
         var newAuction = mapper.Map<AuctionDto>(auction);
 
         await publishEndpoint.Publish(mapper.Map<AuctionCreated>(newAuction));
+        //End
+        var result = await context.SaveChangesAsync() > 0;       
 
         if (!result)
             return BadRequest("Could not save changes to the DB");
