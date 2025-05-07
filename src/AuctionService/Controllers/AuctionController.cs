@@ -80,6 +80,8 @@ public class AuctionController(AuctionDbContext context, IMapper mapper, IPublis
         auction.Item.Mileage = updateAuctionDto.Mileage ?? auction.Item.Mileage;
         auction.Item.Year = updateAuctionDto.Year ?? auction.Item.Year;
 
+        await publishEndpoint.Publish(mapper.Map<AuctionUpdated>(auction));
+
         var result = await context.SaveChangesAsync() > 0;
 
         if (result)
