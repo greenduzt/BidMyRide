@@ -18,5 +18,8 @@ public class AuctionDeletedConsumer : IConsumer<AuctionDeleted>
         {
             throw new MessageException(typeof(AuctionDeleted), "Problem deleting auction");
         }
+        else{
+            System.Console.WriteLine($"{context.Message.Id} Auction deleted!");
+        }
     }
 }
