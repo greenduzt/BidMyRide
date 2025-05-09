@@ -10,5 +10,6 @@ public class MappingProfiles : Profile
     {
         // Mapping to AuctionCreated type to Item type
          CreateMap<AuctionCreated, Item>();
+         CreateMap<AuctionUpdated, Item>();
     }
 }
