@@ -99,6 +99,8 @@ public class AuctionController(AuctionDbContext context, IMapper mapper, IPublis
 
         context.Auctions.Remove(auction);
 
+        await publishEndpoint.Publish<AuctionDeleted>(new {Id = auction.Id.ToString()});
+
         var result = await context.SaveChangesAsync() > 0;
 
         if (!result)
