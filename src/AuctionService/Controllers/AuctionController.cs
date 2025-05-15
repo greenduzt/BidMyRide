@@ -6,6 +6,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Contracts;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,11 +44,12 @@ public class AuctionController(AuctionDbContext context, IMapper mapper, IPublis
 
         return mapper.Map<AuctionDto>(auction);
     }
+    [Authorize]
     [HttpPost] 
     public async Task<ActionResult<AuctionDto>> CreateAuction(CreateAuctionDto auctionDto) 
     {
         var auction = mapper.Map<Auction>(auctionDto);
-        auction.Seller = "test";
+        auction.Seller = User.Identity.Name;
 
         //Following 3 lines will work as a transaction, Either all work or none of these work
         context.Auctions.Add(auction);
@@ -64,6 +66,7 @@ public class AuctionController(AuctionDbContext context, IMapper mapper, IPublis
         return CreatedAtAction(nameof(GetAuctionById), new { auction.Id }, newAuction);
     }
 
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateAuction(Guid id, UpdateAuctionDto updateAuctionDto)
     {
@@ -72,7 +75,8 @@ public class AuctionController(AuctionDbContext context, IMapper mapper, IPublis
         if (auction == null)
             return NotFound();
 
-
+        if(auction.Seller != User.Identity.Name)
+            return Forbid();
 
         auction.Item.Make = updateAuctionDto.Make ?? auction.Item.Make;
         auction.Item.Model = updateAuctionDto.Model ?? auction.Item.Model;
@@ -88,14 +92,15 @@ public class AuctionController(AuctionDbContext context, IMapper mapper, IPublis
             return Ok();
         return BadRequest("Problem saving changes");
     }
-
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteAuction(Guid id)
     {
         var auction = await context.Auctions.FindAsync(id);
         if (auction == null)
             return NotFound();
-
+        if (auction.Seller != User.Identity.Name)
+            return Forbid();
 
         context.Auctions.Remove(auction);
 
