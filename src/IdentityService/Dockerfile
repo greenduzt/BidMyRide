@@ -16,10 +16,12 @@ RUN dotnet restore BidMyRide.sln
 # Copy the app folders over
 COPY src/IdentityService src/IdentityService
 WORKDIR /app/src/IdentityService
+ARG Mode=Debug
 RUN dotnet publish -c Release -o /app/src/out
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
+ARG Mode=Debug
 WORKDIR /app
 COPY --from=build /app/src/out .
 ENTRYPOINT [ "dotnet","IdentityService.dll" ]
