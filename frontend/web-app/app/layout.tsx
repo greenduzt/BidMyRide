@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NavBar from "./nav/NavBar";
 
 export const metadata: Metadata = {
   title: "Bid My Ride",
@@ -14,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        
+        <NavBar />
         {children}
       </body>
     </html>
